@@ -20,6 +20,10 @@ function makePageForEpisodes(episodeList) {
     const episodeCard = document.createElement("div");
     episodeCard.className = "episode-card"; // Add a class for individual episode cards
 
+    // Create a reference button
+    const referenceBtn = document.createElement("button");
+    referenceBtn.className = "reference-button"; // Add a class for styling purposes
+
     // Generate the episode code in the format SXXEXX
     const episodeCode = `S${String(episode.season).padStart(2, "0")}E${String(episode.number).padStart(2, "0")}`;
 
@@ -29,6 +33,14 @@ function makePageForEpisodes(episodeList) {
       <img src="${episode.image.medium}" alt="${episode.name}">
       <p>${episode.summary}</p>
     `;
+    // When clicked, it opens the episode's detailed page in a new browser tab
+    referenceBtn.textContent = "Reference";
+    referenceBtn.addEventListener("click", () => {
+      window.open(episode.url, "_blank"); // Open the episode URL in a new tab
+    });
+
+    // Append the reference button to the episode card
+    episodeCard.appendChild(referenceBtn);
 
     // Append the episode card to the container
     episodesContainer.appendChild(episodeCard);
