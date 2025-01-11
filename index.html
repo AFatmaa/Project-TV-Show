@@ -7,7 +7,21 @@
     <link href="style.css" rel="stylesheet" />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   </head>
+ <header>
+    <div>
+    <!-- Search box -->
+    <input type="text" id="search-box" placeholder="Search episodes..." aria-label="Search episodes" />
+</div>
 
+<!-- how many episodes are being displayed -->
+<p id="episode-count"></p>
+
+<div>
+    <!-- Dropdown menu to select an episode -->
+    <label for="episode-dropdown">Results:</label>
+    <select id="episode-dropdown"></select>
+</div>
+  </header>  
   <body>
     <div id="root">
     </div>
