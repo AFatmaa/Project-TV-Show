@@ -1,22 +1,45 @@
-//You can edit ALL of the code here
 // The setup function initializes the application when the page is loaded
 function setup() {
-  const allEpisodes = getAllEpisodes();
-  makePageForEpisodes(allEpisodes);
-  populateEpisodeDropdown(allEpisodes); // Populate the dropdown with episodes
+  fetchEpisodes()
+    .then((allEpisodes) => {
+      makePageForEpisodes(allEpisodes);
+      populateEpisodeDropdown(allEpisodes); // Populate the dropdown with episodes
 
-  // Add event listener for live search input
-  const searchInput = document.getElementById("search-box");
-  searchInput.addEventListener("input", (event) => {
-     const searchTerm = event.target.value;
-     const filteredEpisodes = filterEpisodes(allEpisodes, searchTerm);
-     makePageForEpisodes(filteredEpisodes);
-     updateEpisodeCount(filteredEpisodes.length, allEpisodes.length);
-  });
+      // Add event listener for live search input
+      const searchInput = document.getElementById("search-box");
+      searchInput.addEventListener("input", (event) => {
+        const searchTerm = event.target.value;
+        const filteredEpisodes = filterEpisodes(allEpisodes, searchTerm);
+        makePageForEpisodes(filteredEpisodes);
+        updateEpisodeCount(filteredEpisodes.length, allEpisodes.length);
+      });
 
-  // Add event listener for dropdown selection
-  handleDropdownSelection(allEpisodes);
+      // Add event listener for dropdown selection
+      handleDropdownSelection(allEpisodes);
+    })
+    .catch((error) => {
+      const rootElem = document.getElementById("root");
+      rootElem.innerHTML = `<p class='error-message'>Failed to load episodes. Please try again later.</p>`;
+      console.error("Error fetching episodes:", error);
+    });
+}
+// Fetch episodes from the API
+function fetchEpisodes() {
+  const apiURL = "https://api.tvmaze.com/shows/82/episodes";
+  const loadingMessage = document.createElement("p");
+  loadingMessage.textContent = "Loading episodes, please wait...";
+  document.getElementById("root").appendChild(loadingMessage);
 
+  return fetch(apiURL)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .finally(() => {
+      document.querySelector(".loading-message")?.remove();
+    });
 }
 
 // This function dynamically generates the HTML structure for the episodes and displays them
