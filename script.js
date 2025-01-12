@@ -1,34 +1,43 @@
 // The setup function initializes the application when the page is loaded
 function setup() {
-  fetchEpisodes()
-    .then((allEpisodes) => {
-      makePageForEpisodes(allEpisodes);
-      populateEpisodeDropdown(allEpisodes); // Populate the dropdown with episodes
+  fetchShows()
+    .then((allShows) => {
+      populateShowDropdown(allShows); // Populate the dropdown with shows
 
-      // Add event listener for live search input
-      const searchInput = document.getElementById("search-box");
-      searchInput.addEventListener("input", (event) => {
-        const searchTerm = event.target.value;
-        const filteredEpisodes = filterEpisodes(allEpisodes, searchTerm);
-        makePageForEpisodes(filteredEpisodes);
-        updateEpisodeCount(filteredEpisodes.length, allEpisodes.length);
+      const showDropdown = document.getElementById("show-dropdown");
+      showDropdown.addEventListener("change", (event) => {
+        const selectedShowId = event.target.value;
+
+        const episodeDropdown = document.getElementById("episode-dropdown");
+        episodeDropdown.innerHTML = ""; // Clear episode dropdown
+
+        if (selectedShowId === "default") {
+          document.getElementById("root").innerHTML = "<p>Please select a show to display episodes.</p>";
+          return;
+        }
+
+        fetchEpisodes(selectedShowId)
+          .then((allEpisodes) => {
+            makePageForEpisodes(allEpisodes);
+            populateEpisodeDropdown(allEpisodes); // Populate the dropdown with episodes
+            setupListeners(allEpisodes);
+          })
+          .catch((error) => {
+            const rootElem = document.getElementById("root");
+            rootElem.innerHTML = `<p class='error-message'>Failed to load episodes. Please try again later.</p>`;
+            console.error("Error fetching episodes:", error);
+          });
       });
-
-      // Add event listener for dropdown selection
-      handleDropdownSelection(allEpisodes);
     })
     .catch((error) => {
-      const rootElem = document.getElementById("root");
-      rootElem.innerHTML = `<p class='error-message'>Failed to load episodes. Please try again later.</p>`;
-      console.error("Error fetching episodes:", error);
+      console.error("Error fetching shows:", error);
+      document.getElementById("root").innerHTML = `<p class='error-message'>Failed to load shows. Please try again later.</p>`;
     });
 }
-// Fetch episodes from the API
-function fetchEpisodes() {
-  const apiURL = "https://api.tvmaze.com/shows/82/episodes";
-  const loadingMessage = document.createElement("p");
-  loadingMessage.textContent = "Loading episodes, please wait...";
-  document.getElementById("root").appendChild(loadingMessage);
+
+// Fetch the list of shows from the API
+function fetchShows() {
+  const apiURL = "https://api.tvmaze.com/shows";
 
   return fetch(apiURL)
     .then((response) => {
@@ -37,9 +46,34 @@ function fetchEpisodes() {
       }
       return response.json();
     })
-    .finally(() => {
-      document.querySelector(".loading-message")?.remove();
+    .then((shows) => {
+      // Sort shows alphabetically, case-insensitive
+      return shows.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
     });
+}
+
+// Fetch episodes from the API
+function fetchEpisodes(showId) {
+  const apiURL = `https://api.tvmaze.com/shows/${showId}/episodes`;
+  return fetch(apiURL).then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    });
+}
+
+// Populate the show dropdown with available shows
+function populateShowDropdown(shows) {
+  const dropdown = document.getElementById("show-dropdown");
+  dropdown.innerHTML = '<option value="default">Select a show</option>';
+
+  shows.forEach((show) => {
+    const option = document.createElement("option");
+    option.value = show.id;
+    option.textContent = show.name;
+    dropdown.appendChild(option);
+  });
 }
 
 // This function dynamically generates the HTML structure for the episodes and displays them
@@ -93,7 +127,7 @@ function makePageForEpisodes(episodeList) {
 function filterEpisodes(episodes, searchTerm) {
   const lowerCaseTerm = searchTerm.toLowerCase();
   return episodes.filter((episode) => {
-    const summary = episode.summary ? episode.summary.toLowerCase() : ""; 
+    const summary = episode.summary ? episode.summary.toLowerCase() : "";
     return (
       episode.name.toLowerCase().includes(lowerCaseTerm) ||
       summary.includes(lowerCaseTerm)
@@ -135,6 +169,18 @@ function handleDropdownSelection(episodes) {
       updateEpisodeCount(1, episodes.length);
     }
   });
+}
+
+// Set up search and episode dropdown listeners
+function setupListeners(allEpisodes) {
+  document.getElementById("search-box").addEventListener("input", (event) => {
+    const searchTerm = event.target.value;
+    const filteredEpisodes = filterEpisodes(allEpisodes, searchTerm);
+    makePageForEpisodes(filteredEpisodes);
+    updateEpisodeCount(filteredEpisodes.length, allEpisodes.length);
+  });
+
+  handleDropdownSelection(allEpisodes);
 }
 
 // Run the setup function when the window finishes loading
