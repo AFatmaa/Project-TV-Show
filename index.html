@@ -7,27 +7,28 @@
     <link href="style.css" rel="stylesheet" />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   </head>
- <header>
-  <div>
-      <!-- Dropdown menu to select a show -->
+  <body>
+  <header>
+    <div>
       <label for="show-dropdown">Select a Show:</label>
       <select id="show-dropdown"></select>
     </div>
     <div>
-    <!-- Search box -->
-    <input type="text" id="search-box" placeholder="Search episodes..." aria-label="Search episodes" />
-</div>
+      <input type="text" id="show-search-box" placeholder="Search Show" />
+    </div>
+    <p id="episode-count"></p>
+    <div>
+      <label for="episode-dropdown">Select a Episodes:</label>
+      <select id="episode-dropdown"></select>
+    </div>
+    <nav>
+      <button id="back-to-shows" style="display: none;">Back to Shows</button>
+    </nav>
+    <div>
+      <input type="text" id="search-box" placeholder="Search Episodes" aria-label="Search episodes" />
+    </div>
+    </header>  
 
-<!-- how many episodes are being displayed -->
-<p id="episode-count"></p>
-
-<div>
-    <!-- Dropdown menu to select an episode -->
-    <label for="episode-dropdown">Results:</label>
-    <select id="episode-dropdown"></select>
-</div>
-  </header>  
-  <body>
     <div id="root">
     </div>
 
