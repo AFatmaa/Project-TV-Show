@@ -3,6 +3,8 @@ function setup() {
   fetchShows()
     .then((allShows) => {
       populateShowDropdown(allShows); // Populate the dropdown with shows
+      displayShowListing(allShows); // Display the list of shows
+      setupShowSearch(allShows); // Enable search functionality for shows
 
       const showDropdown = document.getElementById("show-dropdown");
       showDropdown.addEventListener("change", (event) => {
@@ -21,18 +23,32 @@ function setup() {
             makePageForEpisodes(allEpisodes);
             populateEpisodeDropdown(allEpisodes); // Populate the dropdown with episodes
             setupListeners(allEpisodes);
+            toggleSearchBoxes(false); // Show episode search box
+            toggleBackToShowButton(true); // Show "Back to Shows" button
           })
           .catch((error) => {
             const rootElem = document.getElementById("root");
-            rootElem.innerHTML = `<p class='error-message'>Failed to load episodes. Please try again later.</p>`;
+            rootElem.innerHTML = "<p>Failed to load episodes. Please try again later.</p>";
             console.error("Error fetching episodes:", error);
           });
       });
     })
     .catch((error) => {
       console.error("Error fetching shows:", error);
-      document.getElementById("root").innerHTML = `<p class='error-message'>Failed to load shows. Please try again later.</p>`;
+      document.getElementById("root").innerHTML = "<p>Failed to load shows. Please try again later.</p>";
     });
+
+  document.getElementById("back-to-shows").addEventListener("click", () => {
+    fetchShows()
+      .then((allShows) => {
+        displayShowListing(allShows); // Show the shows listing
+        toggleSearchBoxes(true); // Show show search box
+        toggleBackToShowButton(false); // Hide "Back to Shows" button
+      })
+      .catch((error) => {
+        console.error("Error fetching shows:", error);
+      });
+  });
 }
 
 // Fetch the list of shows from the API
@@ -76,6 +92,49 @@ function populateShowDropdown(shows) {
   });
 }
 
+// Display the list of shows on the main page
+function displayShowListing(shows) {
+  const rootElem = document.getElementById("root");
+  rootElem.innerHTML = ""; // Clear the root element
+
+  const showContainer = document.createElement("div");
+
+  shows.forEach((show) => {
+    const showCard = document.createElement("div");
+
+    showCard.innerHTML = `
+      <h2>${show.name}</h2>
+      <img src="${show.image?.medium || ""}" alt="${show.name}" />
+      <p><strong>Genres:</strong> ${show.genres.join(", ")}</p>
+      <p><strong>Status:</strong> ${show.status}</p>
+      <p><strong>Rating:</strong> ${show.rating?.average || "N/A"}</p>
+      <p><strong>Runtime:</strong> ${show.runtime || "N/A"} minutes</p>
+      <p>${show.summary}</p>
+      <button class="show-details-btn" data-show-id="${show.id}">View Episodes</button>
+    `;
+
+    showContainer.appendChild(showCard);
+  });
+
+  rootElem.appendChild(showContainer);
+
+  document.querySelectorAll(".show-details-btn").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const selectedShowId = event.target.dataset.showId;
+      fetchEpisodes(selectedShowId)
+        .then((allEpisodes) => {
+          makePageForEpisodes(allEpisodes);
+          setupListeners(allEpisodes);
+          toggleSearchBoxes(false);
+          toggleBackToShowButton(true);
+        })
+        .catch((error) => {
+          console.error("Error fetching episodes:", error);
+        });
+    });
+  });
+}
+
 // This function dynamically generates the HTML structure for the episodes and displays them
 function makePageForEpisodes(episodeList) {
   const rootElem = document.getElementById("root"); // Get the root element from the DOM
@@ -83,20 +142,14 @@ function makePageForEpisodes(episodeList) {
  
   // Create a container for all episode cards
   const episodesContainer = document.createElement("div");
-  episodesContainer.className = "episodes-container"; // Add a class for styling purposes
 
   // Iterate over each episode in the list
   episodeList.forEach((episode) => {
      // Create a card for the episode
      const episodeCard = document.createElement("div");
-     episodeCard.className = "episode-card"; // Add a class for individual episode cards
 
      // Create a reference button
      const referenceBtn = document.createElement("button");
-     referenceBtn.className = "reference-button"; // Add a class for styling purposes
-
-     // Generate the episode code in the format SXXEXX
-     //const episodeCode = `S${String(episode.season).padStart(2, "0")}E${String(episode.number).padStart(2, "0")}`;
 
      // Generate the episode code in a simpler way
      const episodeCode = `S${episode.season.toString().padStart(2, "0")}E${episode.number.toString().padStart(2, "0")}`;
@@ -123,11 +176,50 @@ function makePageForEpisodes(episodeList) {
   // Append the container with all episode cards to the root element
   rootElem.appendChild(episodesContainer);
 }
+
+// Function to filter shows based on the search term
+function filterShows(shows, searchTerm) {
+  const lowerCaseTerm = searchTerm.toLowerCase();
+  return shows.filter((show) => {
+    const nameMatch = show.name.toLowerCase().includes(lowerCaseTerm);
+    const genreMatch = show.genres.some((genre) =>
+      genre.toLowerCase().includes(lowerCaseTerm)
+    );
+    const summaryMatch = show.summary
+      ? show.summary.toLowerCase().includes(lowerCaseTerm)
+      : false;
+
+    return nameMatch || genreMatch || summaryMatch;
+  });
+}
+
+// Add search functionality for shows
+function setupShowSearch(shows) {
+  const searchBox = document.getElementById("show-search-box");
+  searchBox.addEventListener("input", (event) => {
+    const searchTerm = event.target.value;
+    const filteredShows = filterShows(shows, searchTerm);
+    displayShowListing(filteredShows);
+  });
+}
+
+// Show and episode search box toggle
+function toggleSearchBoxes(isShowSearchVisible) {
+  document.getElementById("show-search-box").style.display = isShowSearchVisible ? "block" : "none";
+  document.getElementById("search-box").style.display = isShowSearchVisible ? "none" : "block";
+}
+
+// Back to shows button toggle
+function toggleBackToShowButton(isVisible) {
+  const backToShowsButton = document.getElementById("back-to-shows");
+  backToShowsButton.style.display = isVisible ? "block" : "none";
+}
+
 // Function to filter episodes based on the search term
 function filterEpisodes(episodes, searchTerm) {
   const lowerCaseTerm = searchTerm.toLowerCase();
   return episodes.filter((episode) => {
-    const summary = episode.summary ? episode.summary.toLowerCase() : "";
+    const summary = episode.summary ? episode.summary.toLowerCase() : ""; 
     return (
       episode.name.toLowerCase().includes(lowerCaseTerm) ||
       summary.includes(lowerCaseTerm)
